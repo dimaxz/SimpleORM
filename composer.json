@@ -9,7 +9,7 @@
     ],
     "autoload": {
 	"psr-4": {
-	    "SimpleORM":"src"
+	    "SimpleORM\\":"src"
 	}
     }
 }
