@@ -14,13 +14,11 @@ namespace SimpleORM;
  */
 interface QueryBuilderInterface {
 	
-	public function get_where($table,array $where);
+	public function getResultQuery($table,\SimpleORM\ISpecificationCriteria $Criteria);
 	
-	public function where(array $where);
+	public function update($table,array $data,$where = []);
+
+	public function insert($table,array $data);
 	
-	public function limit($limit,$offset);
-	
-	public function get();
-	
-	public function join($table,$on,$type = 'INNER');
+	public function insert_id();
 }
