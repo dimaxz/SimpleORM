@@ -75,8 +75,14 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		//update
 		else {
 			
-			return $this->getAdapter()->update($this->getEntityTable(), $data, "{$this->setKey()} = '{$id}'");
+			if(!$this->getAdapter()->update($this->getEntityTable(), $data, "{$this->setKey()} = '{$id}'")){
+				return false;
+			}
 
+		}		
+		
+		if(method_exists($this, 'onSave' )){
+			return $this->onSave( $Entity );
 		}		
 		
 		return true;
