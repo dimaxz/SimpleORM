@@ -11,8 +11,10 @@ abstract class AbstractEntity implements EntityInterface
 {
 
     protected $id;
+	
+	protected $deleted;
 
-    public function getId()
+	public function getId()
     {
         return $this->id;
     }
@@ -31,4 +33,12 @@ abstract class AbstractEntity implements EntityInterface
         $this->id = $id;
         return $this;		
     }
+	
+	public function setDeleted($deleted){
+		$this->deleted = $deleted;
+	}
+	
+	public function getDeleted() {
+		return $this->deleted;
+	}
 }
