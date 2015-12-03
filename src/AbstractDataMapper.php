@@ -27,12 +27,14 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		
 		$this->entityTable = !empty($db_name)? "$db_name.".$this->setEntityTable() : $this->setEntityTable();
 		
-		$this->key = $this->setKey();
-		
-		if(empty($this->entityTable) || empty($this->key)){
+		//$this->key = $this->getKey();
+	
+		if($this->getEntityTable()=='' || $this->getPrimaryKey()==''){
 			throw new InvalidEntityPropertyException('Свойства entityTable или key не заданы');
 		}
     }
+	
+	
 	
 	function getEntityTable() {
 		return $this->entityTable;
@@ -58,8 +60,8 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		
 		$data = $this->unbuildEntity($Entity);
 		
-		$id = $data[$this->setKey()];
-		unset($data[$this->setKey()]);
+		$id = $data[$this->getPrimaryKey()];
+		unset($data[$this->getPrimaryKey()]);
 		
 		//insert
 		if (empty($id)) {
@@ -75,7 +77,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		//update
 		else {
 			
-			if(!$this->getAdapter()->update($this->getEntityTable(), $data, "{$this->setKey()} = '{$id}'")){
+			if(!$this->getAdapter()->update($this->getEntityTable(), $data, "{$this->getPrimaryKey()} = '{$id}'")){
 				return false;
 			}
 
@@ -162,7 +164,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	
 	abstract protected function setEntityTable();
 	
-	abstract protected function setKey();
+	abstract protected function getPrimaryKey();
 	
 	abstract protected function setMappingFields();
 	

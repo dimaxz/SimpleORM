@@ -26,8 +26,10 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 			
 	function __construct(\League\Container\Container $DI, QueryBuilderInterface $adapter, $db_name = null) {
 		
-		$this->setMappingFields();
 		$this->DI = $DI;
+		
+		$this->setMappingFields();
+		
 		parent::__construct($adapter, $db_name);
 	}
 
@@ -36,18 +38,18 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 	 */
 	protected function addMappingField($alias,$field = null){
 		
-		$table_field = isset($field['field'])?$field['field']:(is_string($field)?$field:$alias);
-		
-		$this->mapping_fields[$alias] = !is_array($field) ? [
-			'field'	=>	$table_field
-		] : $field;
+		if(! isset($field['field'])){
+			$field['field'] = is_string($field)?$field:$alias;	
+		}
+	
+		$this->mapping_fields[$alias] = $field;
 
 		if(isset($field['primary']) && $field['primary']===true){
-			$this->key = $table_field;
+			$this->key = $field['field'];
 		}
 		
 		if(isset($field['softdelete']) && $field['softdelete']===true){
-			$this->soft_delete_key = $table_field;
+			$this->soft_delete_key = $field['field'];
 		}
 		
 		return $this;
@@ -63,7 +65,7 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 	/**
 	 * Установка ключа
 	 */
-	protected function setKey() {
+	protected function getPrimaryKey() {
 		return $this->key;
 	}
 
@@ -83,8 +85,6 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 	 * @throws BadMethodCallException
 	 */
 	protected function buildEntity(EntityInterface $Entity, array $row){
-		
-		//$mapfields = array_merge([ 'id' => $this->key], $this->setMappingFields());
 		
         foreach ($this->mapping_fields as $alias => $cfg ) {
 			
@@ -128,6 +128,46 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
         return $Entity;		
 	}	
 
+	
+	/**
+	 * из объекта формирует массив
+	 * @param \Core\Infrastructure\EntityInterface $Entity
+	 * @return \Core\Infrastructure\EntityInterface
+	 * @throws BadMethodCallException
+	 */
+	protected function unbuildEntity(EntityInterface $Entity){
+		
+		$row = [];
+		
+        foreach ($this->mapping_fields as $alias => $cfg ) {
+			
+			$field = $cfg['field'];
+			
+			$method_get = 'get' . ucfirst($alias);
+			
+			if(!method_exists($Entity, $method_get )){
+				throw new BadMethodCallException("Метод {$method_get}  не определен");
+			}		
+			
+			//--------------------------------------------------------------------
+			if( isset($cfg['unbuild']) && is_object($cfg['unbuild']) ){
+				$value = call_user_func($cfg['unbuild'], $Entity->{$method_get}() );
+			}
+			elseif(isset($cfg['relation'])){
+				
+				$value = $Entity->{$method_get}()->getId();
+				
+			}			
+			else{
+				$value = $Entity->{$method_get}();
+			}			
+			
+			$row[$field] = $value;
+
+        }
+
+        return $row;		
+	}	
 	
 	
 	/**
