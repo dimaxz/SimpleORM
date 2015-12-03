@@ -21,11 +21,13 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 	protected $table;
 	
 	protected $mapping_fields;
+	
+	protected $DI;
 			
-	function __construct(QueryBuilderInterface $adapter, $db_name = null) {
+	function __construct(\League\Container\Container $DI, QueryBuilderInterface $adapter, $db_name = null) {
 		
 		$this->setMappingFields();
-		
+		$this->DI = $DI;
 		parent::__construct($adapter, $db_name);
 	}
 
@@ -96,9 +98,23 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 				throw new BadMethodCallException("Метод {$method_set}  не определен");
 			}			
 			
-			//событие onBuildField
+			//событие на формирование поля
 			if( isset($cfg['build']) && is_object($cfg['build']) ){
-				$value = call_user;//$cfg['build']
+				$value = call_user_func($cfg['build'], $row);
+			}
+			//на связь
+			elseif(isset($cfg['relation'])){
+				
+				$mapper = $this->DI->get($cfg['relation']);
+				
+				if($this->use_joins===true){
+					$value = $mapper->createEntity($row);
+				}
+				else{
+					$fkey = $mapper->key;
+					$value = $mapper->findBySpecification((new Specification)->setWhere($fkey, $row[$field]));
+				}				
+				
 			}
 			elseif(is_string($field) && isset($row[strtolower($field)])){
 				$value = $row[strtolower($field)];
@@ -112,4 +128,32 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
         return $Entity;		
 	}	
 
+	
+	
+	/**
+	 * Построение join-ов
+	 */
+	protected function setRelations(ISpecificationCriteria $Specification){
+		if($this->use_joins===true){
+			$joins = [];
+
+			foreach ($this->mapping_fields as $field => $cfg){
+				if(isset($cfg['relation'])){
+					$mapper = $this->DI->get($cfg['relation']);
+					
+					$table = $mapper->getEntityTable();
+					
+					$joins[$table] = [
+							'alias'	=> $field,
+							//'type'	=> 'INNER',
+							'on'	=> "{$this->table}.{$this->key} = {$field}.{$mapper->key}"
+					];
+					
+				}
+			}	
+			
+			$Specification->setJoins($joins);
+		}			
+	}	
+	
 }

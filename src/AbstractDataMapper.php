@@ -260,7 +260,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	/**
 	 * Построение join-ов
 	 */
-	private function setRelations(ISpecificationCriteria $Specification){
+	protected function setRelations(ISpecificationCriteria $Specification){
 		if($this->use_joins===true){
 			$joins = [];
 			
