@@ -83,9 +83,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 
 		}		
 		
-		if(method_exists($this, 'onSaveSuccess' )){
-			return $this->onSaveSuccess( $Entity );
-		}		
+		if(method_exists($this, 'onSaveSuccess' )){ return $this->onSaveSuccess( $Entity );}
 		
 		return true;
 	}
@@ -207,14 +205,14 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		if (
 				$delete_key > '' && 
 				$Entity->getId() > 0){
-			$result = $this->db->update($this->getEntityTable(), [ $delete_key => 1 ], "{$this->setKey()} = '{$Entity->getId()}'");
+				$result = $this->db->update($this->getEntityTable(), [ $delete_key => 1 ], "{$this->getPrimaryKey()} = '{$Entity->getId()}'");
 		}
 		elseif($Entity->getId() > 0){
-			$result = $this->db->delete($this->getEntityTable(), [$this->setKey() => $Entity->getId()]);
+			
+			if($result = $this->db->delete($this->getEntityTable(), $this->getPrimaryKey()." = ".$Entity->getId())){
+				if(method_exists($this, 'onDeleteSuccess' )){ $result = $this->onDeleteSuccess( $Entity );}
+			}
 		}
-		
-		if($result===true)
-			unset($Entity);
 		
 		return $result;
 	}

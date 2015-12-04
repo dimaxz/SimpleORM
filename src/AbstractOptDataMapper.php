@@ -217,4 +217,18 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 		return true;
 	}
 	
+	/**
+	 * На успешное удаление
+	 * @param \SimpleORM\EntityInterface $Entity
+	 */
+	protected function onDeleteSuccess(EntityInterface $Entity) {
+		foreach ($this->relations as $alias => $mapper) {
+			$Entity = $Entity->{'get'.$alias}();
+			if(!$mapper->delete($Entity)){
+				throw new \Autoprice\Exceptions\EntityNotDeleteException('Unable to delete Entity!');
+			}
+		}
+		
+		return true;
+	}
 }
