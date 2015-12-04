@@ -209,7 +209,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		}
 		elseif($Entity->getId() > 0){
 			
-			if($result = $this->db->delete($this->getEntityTable(), $this->getPrimaryKey()." = ".$Entity->getId())){
+			if($result = $this->db->delete($this->getEntityTable(), $this->getPrimaryKey()."  = ".$Entity->getId())){
 				if(method_exists($this, 'onDeleteSuccess' )){ $result = $this->onDeleteSuccess( $Entity );}
 			}
 		}
