@@ -22,6 +22,8 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 	
 	protected $mapping_fields;
 	
+	protected $relations = [];
+
 	protected $DI;
 			
 	function __construct(\League\Container\Container $DI, QueryBuilderInterface $adapter, $db_name = null) {
@@ -174,26 +176,45 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 	 * Построение join-ов
 	 */
 	protected function setRelations(ISpecificationCriteria $Specification){
-		if($this->use_joins===true){
-			$joins = [];
 
-			foreach ($this->mapping_fields as $field => $cfg){
-				if(isset($cfg['relation'])){
-					$mapper = $this->DI->get($cfg['relation']);
-					
-					$table = $mapper->getEntityTable();
-					
-					$joins[$table] = [
-							'alias'	=> $field,
-							//'type'	=> 'INNER',
-							'on'	=> "{$this->table}.{$this->key} = {$field}.{$mapper->key}"
-					];
-					
-				}
-			}	
-			
+		$joins = [];
+
+		foreach ($this->mapping_fields as $field => $cfg){
+			if(isset($cfg['relation'])){
+				
+				$this->relations[$field] = $mapper = $this->DI->get($cfg['relation']);
+
+				$table = $mapper->getEntityTable();
+
+				$joins[$table] = [
+						'alias'	=> $field,
+						//'type'	=> 'INNER',
+						'on'	=> "{$this->table}.{$this->key} = {$field}.{$mapper->key}"
+				];
+
+			}
+		}	
+
+		if($this->use_joins===true){
 			$Specification->setJoins($joins);
 		}			
 	}	
+	
+	/**
+	 * На успешное сохранение
+	 * @param \SimpleORM\EntityInterface $Entity
+	 */
+	protected function onSaveSuccess(EntityInterface $Entity){
+		
+		
+		foreach ($this->relations as $alias => $mapper) {
+			$Entity = $Entity->{'get'.$alias}();
+			if(!$mapper->save($Entity)){
+				throw new \Autoprice\Exceptions\EntityNotSaveException('Unable to save Entity!');
+			}
+		}
+		
+		return true;
+	}
 	
 }

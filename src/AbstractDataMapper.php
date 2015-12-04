@@ -83,8 +83,8 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 
 		}		
 		
-		if(method_exists($this, 'onSave' )){
-			return $this->onSave( $Entity );
+		if(method_exists($this, 'onSaveSuccess' )){
+			return $this->onSaveSuccess( $Entity );
 		}		
 		
 		return true;
