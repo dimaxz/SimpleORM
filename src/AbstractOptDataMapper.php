@@ -40,8 +40,11 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 	 */
 	protected function addMappingField($alias,$field = null){
 		
-		if(! isset($field['field'])){
-			$field['field'] = is_string($field)?$field:$alias;	
+		if(is_string($field)){
+			$field = ['field'	=>	$alias];
+		}
+		elseif(is_array($field) && !isset($field['field'])){
+			$field['field']	= $alias;
 		}
 	
 		$this->mapping_fields[$alias] = $field;
@@ -186,10 +189,12 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 
 				$table = $mapper->getEntityTable();
 
+				$relation_key = isset($cfg['on'])? $cfg['on'] : $mapper->key;
+				
 				$joins[$table] = [
 						'alias'	=> $field,
 						//'type'	=> 'INNER',
-						'on'	=> "{$this->table}.{$this->key} = {$field}.{$mapper->key}"
+						'on'	=> "`{$this->table}`.{$cfg['field']} = `{$field}`.{$relation_key}"
 				];
 
 			}
