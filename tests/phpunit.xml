@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="./bootstrap.php"
+	 printsummary="true" 
+	 colors="true"
+	 convertErrorsToExceptions="false"
+	 convertNoticesToExceptions="false"
+	 convertWarningsToExceptions="false"
+	 stopOnFailure="true">
+   
+    <testsuites name="Suites">
+	<testsuite name="core">
+	    <directory>./</directory>
+	</testsuite>
+    </testsuites>
+  
+    <logging>
+	<log type="coverage-html" target="./../build/coverage" 
+	     yui="true" highlight="true"
+	     lowUpperBound="50" highLowerBound="80"/>
+	<log type="testdox" target="./../build/log/testdox.html" />
+	<log type="coverage-clover" target="./../build/logs/clover.xml"/>
+	<log type="coverage-xml" target="./../build/logs/coverage.xml"/>
+	<log type="junit" target="./../build/logs/junit.xml" logIncompleteSkipped="false"/>	
+    </logging>
+    
+
+    
+    <filter>
+
+	<whitelist processUncoveredFilesFromWhitelist="true">
+	    <directory suffix=".php">./../src</directory>
+	</whitelist>
+    </filter>    
+    
+</phpunit>

@@ -12,4 +12,8 @@ interface EntityInterface
     public function getId();
     
     public function setId($id);
+	
+    public function getDeleted();
+    
+    public function setDeleted($delete);	
 }

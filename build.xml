@@ -1,0 +1,128 @@
+<project name="demo-system" default="build">
+    <property name="basedir" value="."/>
+    
+	<!-- очистка директория билда -->
+    <target name="clean">
+	<delete dir="${basedir}/build" />
+	<echo msg="Task: clean - end!"/>
+    </target>
+	
+    <target name="prepare">
+	<mkdir dir="${basedir}/build/logs" />
+	<mkdir dir="${basedir}/build/codebrowser" />
+	<mkdir dir="${basedir}/build/coverage" />
+	<mkdir dir="${basedir}/build/cpd" />
+	<mkdir dir="${basedir}/build/dependencies" />
+	<mkdir dir="${basedir}/build/phpmetrics" />
+	<mkdir dir="${basedir}/build/documentation" />
+	<echo msg="Task: prepare - end!"/>
+    </target>
+ 
+    <target name="parallel">
+	<parallel>
+	    <antcall target="phpmetrics" />
+	    <antcall target="phpcs" />
+	    <antcall target="phpmd" />
+	    <antcall target="phpcpd" />
+	    <antcall target="pdepend" />
+	</parallel>
+    </target>
+   
+    <target name="composer">
+	<exec logoutput="true" command="composer update --dev" />
+	<echo msg="Task: composer - end!"/> 
+    </target>	    
+   
+    <target name="phpunit">
+	<exec command="phpunit --bootstrap ./tests/bootstrap.php 
+--configuration ./tests/phpunit.xml --colors" dir="${basedir}" logoutput="true" />
+
+	<echo msg="Task: phpunit - end!"/>
+    </target>    
+    
+    
+
+    <target name="phpmetrics">
+	<exec command="phpmetrics 
+	--report-html ./build/phpmetrics/index.html
+	--report-xml ./build/logs/phpmetrics.xml 
+	--report-csv ./build/logs/phpmetrics.csv
+	--violations-xml ./build/logs/violations.xml
+	./src" dir="${basedir}" passthru="true" />
+
+	<echo msg="Task: phpmetrics - end!"/>
+    </target> 
+    
+  	              
+	    
+    <target name="apigen">
+	<exec command="apigen generate 
+--source ./src 
+--destination ./build/documentation
+--exclude *\_smarty_lib\*
+--tree
+--todo
+--title Documentation-Api"
+	      dir="${basedir}" passthru="true" />
+
+	<echo msg="Task: apigen - end!"/>
+    </target> 		
+	
+			
+	
+	
+    <target name="pdepend">
+	<exec dir="${basedir}" executable="pdepend" logoutput="true">
+	    <arg line="--jdepend-xml=./build/logs/jdepend.xml
+                       --jdepend-chart=./build/dependencies/jdepend.svg
+                       --overview-pyramid=./build/dependencies/pyramid.svg
+                       --optimization=best
+                       --exclude=build,tests,vendor
+		       --debug
+                       ." />
+	</exec>
+	<echo msg="Task: pdepend - end!"/>
+    </target>	
+	
+    <target name="phpcb">
+	<exec dir="${basedir}" executable="phpcb" failonerror="false">
+	    <arg line="--log ./build/logs --source . --output ./build/codebrowser" />
+	</exec>
+    </target>	
+ 
+    <target name="phpcs">
+	<exec dir="${basedir}" executable="phpcs" logoutput="true">
+	    <arg line="
+--extensions=php 
+--ignore=build/*,tests/*,vendor/*
+--standard=PSR2 
+--tab-width=4 
+--report=checkstyle 
+--report-file=./build/logs/checkstyle.xml 
+." />
+	</exec>
+    </target>   
+    <target name="phpmd">
+	<exec dir="${basedir}" executable="phpmd" logoutput="true">
+	    <arg line="./src xml codesize --reportfile ./build/logs/pmd.xml" />
+	</exec>
+    </target>      
+    <target name="phpcpd">
+	<exec dir="${basedir}" executable="phpcpd" logoutput="true">
+	    <arg line="--log-pmd=./build/logs/pmd-cpd.xml
+                       --exclude=build
+                       --exclude=tests
+		       --exclude=vendor
+                       ." />
+	</exec>
+    </target>    
+     
+     
+    
+    <target name="build" depends="clean,prepare,composer,tests,reports" />
+    
+    <target name="tests" depends="phpunit" />
+    
+    <target name="reports" depends="phpmetrics,phpcs,phpmd,phpcpd,pdepend,apigen" />
+     
+</project>
