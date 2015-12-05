@@ -22,6 +22,8 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 	
 	protected $mapping_fields;
 	
+	protected $mapping_fields_aliases;
+	
 	protected $relations = [];
 
 	protected $DI;
@@ -41,7 +43,7 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 	protected function addMappingField($alias,$field = null){
 		
 		if(is_string($field)){
-			$field = ['field'	=>	$alias];
+			$field = ['field'	=>	$field];
 		}
 		elseif(is_array($field) && !isset($field['field'])){
 			$field['field']	= $alias;
@@ -56,6 +58,8 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 		if(isset($field['softdelete']) && $field['softdelete']===true){
 			$this->soft_delete_key = $field['field'];
 		}
+		
+		$this->mapping_fields_aliases[$field['field']] = $alias;
 		
 		return $this;
 	}
@@ -116,7 +120,7 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 					$value = $mapper->createEntity($row);
 				}
 				else{
-					$fkey = $mapper->key;
+					$fkey = isset($cfg['on']) ? $cfg['on'] :$mapper->key;
 					$value = $mapper->findBySpecification((new Specification)->setWhere($fkey, $row[$field]));
 				}				
 				
@@ -143,7 +147,7 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 	protected function unbuildEntity(EntityInterface $Entity){
 		
 		$row = [];
-		
+
         foreach ($this->mapping_fields as $alias => $cfg ) {
 			
 			$field = $cfg['field'];
@@ -160,13 +164,18 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 			}
 			elseif(isset($cfg['relation'])){
 				
-				$value = $Entity->{$method_get}()->getId();
+				if(isset($cfg['on']))
+					$fkey = $this->DI->get($cfg['relation'])->getFieldAlias($cfg['on']);
+				else
+					$fkey = 'id';
+				
+				$value = $Entity->{$method_get}()->{'get'.$fkey}();
 				
 			}			
 			else{
 				$value = $Entity->{$method_get}();
 			}			
-			
+						
 			$row[$field] = $value;
 
         }
@@ -175,7 +184,13 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 	}	
 	
 	
-	/**
+	public function getFieldAlias($field){
+		
+		return $this->mapping_fields_aliases[$field];
+		
+	}
+
+		/**
 	 * Построение join-ов
 	 */
 	protected function setRelations(ISpecificationCriteria $Specification){

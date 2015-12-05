@@ -21,6 +21,8 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	 * @var type 
 	 */
 	protected $use_joins = false;
+	
+	protected $use_delete = false;
 
 	public function __construct( QueryBuilderInterface $adapter, $db_name = null) {// \CI_DB_mysqli_driver //DatabaseAdapterInterface
         $this->db = $adapter;
@@ -65,6 +67,8 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		
 		//insert
 		if (empty($id)) {
+			
+			unset($data[$this->setSoftDeleteKey()]);
 			
 			$this->db->insert($this->getEntityTable(),$data);
 			
@@ -251,6 +255,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	 */
 	private function setSoftDelete(ISpecificationCriteria $specification){
 		if(
+				$this->use_delete === false &&
 				$this->setSoftDeleteKey()>'' 
 				&& !isset($specification->getWhere()[$this->setSoftDeleteKey()])
 				)
@@ -282,6 +287,12 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	{
 		$o = clone $this;
 		$o->use_joins = true;
+		return $o;
+	}
+	
+	public function withDelete(){
+		$o = clone $this;
+		$o->use_delete = true;
 		return $o;
 	}
 
