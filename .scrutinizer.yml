@@ -4,5 +4,5 @@ build:
             -
                 command: phpunit --bootstrap ./tests/bootstrap.php --configuration ./tests/phpunit.xml --colors
                 coverage:
-                    file: /logs/clover.xml
+                    file: ./build/logs/clover.xml
                     format: php-clover
