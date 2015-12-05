@@ -2,7 +2,7 @@ build:
     tests:
         override:
             -
-                command: phpunit --coverage-clover=/build/logs/clover.xml
+                command: phpunit --bootstrap ./tests/bootstrap.php --configuration ./tests/phpunit.xml --colors
                 coverage:
                     file: my-coverage-file
                     format: php-clover
