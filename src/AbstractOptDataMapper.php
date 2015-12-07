@@ -45,6 +45,9 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 		if(is_string($field)){
 			$field = ['field'	=>	$field];
 		}
+		elseif(empty($field)){
+			$field = ['field'	=>	$alias];
+		}
 		elseif(is_array($field) && !isset($field['field'])){
 			$field['field']	= $alias;
 		}
