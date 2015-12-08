@@ -55,7 +55,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	
 	/**
 	 * Cохранение сущности
-	 * @param \Core\Infrastructure\EntityInterface $Entity
+	 * @param EntityInterface $Entity
 	 */
 	public function save(EntityInterface $Entity)
 	{
@@ -94,7 +94,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	
 	/**
 	 * из объекта формирует массив
-	 * @param \Core\Infrastructure\EntityInterface $Entity
+	 * @param EntityInterface $Entity
 	 * @return \Core\Infrastructure\EntityInterface
 	 * @throws BadMethodCallException
 	 */
@@ -128,9 +128,9 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	/**
 	 * Подготавливаем конечный вариант Сущности
 	 * 
-	 * @param \Core\Infrastructure\EntityInterface $Entity
+	 * @param EntityInterface $Entity
 	 * @param array $row
-	 * @return \Core\Infrastructure\EntityInterface
+	 * @return EntityInterface
 	 * @throws BadMethodCallException
 	 */
 	protected function buildEntity(EntityInterface $Entity, array $row){
@@ -174,7 +174,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	
 	/**
 	 * 
-	 * @param \Core\Infrastructure\ISpecificationCriteria $specification
+	 * @param ISpecificationCriteria $specification
 	 * @return type
 	 */
 	public function findBySpecification(ISpecificationCriteria $specification){
@@ -197,7 +197,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	
 	/**
 	 * Удаление записи
-	 * @param \Core\Infrastructure\EntityInterface $Entity
+	 * @param EntityInterface $Entity
 	 * @return boolean
 	 */
 	public function delete(EntityInterface $Entity)
@@ -251,7 +251,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	
 	/**
 	 * Выборка удаленных моделей
-	 * @param \Core\Infrastructure\ISpecificationCriteria $specification
+	 * @param ISpecificationCriteria $specification
 	 */
 	private function setSoftDelete(ISpecificationCriteria $specification){
 		if(
