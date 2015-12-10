@@ -193,8 +193,13 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 		
 	}
 
-		/**
+	/**
 	 * Построение join-ов
+	 * 
+	 * @todo добавить типы связей 
+	 * has_many - один к многим (пост и коммеентарии)
+	 * belongs_to - многие к многим (пользователь имет множество оплат одного заказа)
+	 * has_one - один к одному
 	 */
 	protected function setRelations(ISpecificationCriteria $Specification){
 
@@ -203,7 +208,10 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 		foreach ($this->mapping_fields as $field => $cfg){
 			if(isset($cfg['relation'])){
 				
-				$this->relations[$field] = $mapper = $this->DI->get($cfg['relation']);
+				$this->relations[$field] = [
+					'mapper'	=>	$mapper = $this->DI->get($cfg['relation']),
+					'reltype'	=>  isset($cfg['reltype']) ? $cfg['reltype'] : 'belongs_to'
+				];
 
 				$table = $mapper->getEntityTable();
 
@@ -230,7 +238,8 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 	protected function onSaveSuccess(EntityInterface $Entity){
 		
 		
-		foreach ($this->relations as $alias => $mapper) {
+		foreach ($this->relations as $alias => $cfg) {
+			$mapper = $cfg['mapper'];
 			$Entity = $Entity->{'get'.$alias}();
 			if(!$mapper->save($Entity)){
 				throw new \Autoprice\Exceptions\EntityNotSaveException('Unable to save Entity!');
@@ -242,13 +251,20 @@ abstract class AbstractOptDataMapper extends AbstractDataMapper{
 	
 	/**
 	 * На успешное удаление
+	 * @todo неободимо удаление в том случае если связь идет один к одному,или один ко многим
 	 * @param \SimpleORM\EntityInterface $Entity
 	 */
 	protected function onDeleteSuccess(EntityInterface $Entity) {
-		foreach ($this->relations as $alias => $mapper) {
-			$Entity = $Entity->{'get'.$alias}();
-			if(!$mapper->delete($Entity)){
-				throw new \Autoprice\Exceptions\EntityNotDeleteException('Unable to delete Entity!');
+		
+		foreach ($this->relations as $alias => $cfg) {
+			$mapper = $cfg['mapper'];
+			
+			//если связь один к одному то удаляем сущность
+			if($cgg['reltype'] == 'has_one'){
+				$Entity = $Entity->{'get'.$alias}();
+				if(!$mapper->delete($Entity)){
+					throw new \Autoprice\Exceptions\EntityNotDeleteException('Unable to delete Entity!');
+				}
 			}
 		}
 		
