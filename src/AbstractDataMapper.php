@@ -125,17 +125,20 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		
 		$data = $this->unbuildEntity($Entity);
 		
+		//protected function onAfterSave(\SimpleORM\EntityInterface $Entity, &$data)
+		if(method_exists($this, 'onAfterSave' )) $this->onAfterSave( $Entity, $data );
+		
 		$id = $data[$this->getPrimaryKey()];
-		unset($data[$this->getPrimaryKey()]);
+		unset($data[$this->getPrimaryKey()]);		
 		
 		//insert
 		if (empty($id)) {
 			
 			unset($data[$this->setSoftDeleteKey()]);
 			
-			$this->db->insert($this->getEntityTable(),$data);
+			$this->getAdapter()->insert($this->getEntityTable(),$data);
 			
-			if (!$id = $this->db->insert_id()) {
+			if (!$id = $this->getAdapter()->insert_id()) {
 				return false;
 			}
 			
@@ -150,7 +153,8 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 
 		}		
 		
-		if(method_exists($this, 'onSaveSuccess' )){ return $this->onSaveSuccess( $Entity );}
+		if(method_exists($this, 'onBeforeSave' )) $this->onBeforeSave( $Entity );
+
 		
 		return true;
 	}
@@ -159,14 +163,17 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	 * На успешное сохранение
 	 * @param \SimpleORM\EntityInterface $Entity
 	 */
-	protected function onSaveSuccess(EntityInterface $Entity){
-		
+	protected function onBeforeSave(EntityInterface $Entity){
 		
 		foreach ($this->relations as $alias => $mapper) {
-			$Entity = $Entity->{'get'.$alias}();
-			if(!$mapper->save($Entity)){
+		
+			$SaveEntity = $Entity->{'get'.$alias}();
+			
+			if(!$mapper->save($SaveEntity)){
 				throw new \Autoprice\Exceptions\EntityNotSaveException('Unable to save Entity!');
 			}
+			
+			unset($SaveEntity);
 		}
 		
 		return true;
@@ -176,7 +183,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	 * На успешное удаление
 	 * @param \SimpleORM\EntityInterface $Entity
 	 */
-	protected function onDeleteSuccess(EntityInterface $Entity) {
+	protected function onBeforeDelete(EntityInterface $Entity) {
 		foreach ($this->relations as $alias => $mapper) {
 			$Entity = $Entity->{'get'.$alias}();
 			if(!$mapper->delete($Entity)){
@@ -376,12 +383,12 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		if (
 				$delete_key > '' && 
 				$Entity->getId() > 0){
-				$result = $this->db->update($this->getEntityTable(), [ $delete_key => 1 ], "{$this->getPrimaryKey()} = '{$Entity->getId()}'");
+				$result = $this->getAdapter()->update($this->getEntityTable(), [ $delete_key => 1 ], "{$this->getPrimaryKey()} = '{$Entity->getId()}'");
 		}
 		elseif($Entity->getId() > 0){
 			
-			if($result = $this->db->delete($this->getEntityTable(), $this->getPrimaryKey()."  = ".$Entity->getId())){
-				if(method_exists($this, 'onDeleteSuccess' )){ $result = $this->onDeleteSuccess( $Entity );}
+			if($result = $this->getAdapter()->delete($this->getEntityTable(), $this->getPrimaryKey()."  = ".$Entity->getId())){
+				if(method_exists($this, 'onBeforeDelete' )){ $result = $this->onBeforeDelete( $Entity );}
 			}
 		}
 		
