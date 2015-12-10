@@ -9,42 +9,105 @@ namespace SimpleORM;
  */
 abstract class AbstractDataMapper implements RepositoryInterface, MapperInterface
 {
-	protected $db;
+	/**
+	 * адаптер для работы с бд
+	 * @var type 
+	 */
+	protected $adapter;
 	
+	/**
+	 * таблица для сущности
+	 * @var type 
+	 */
     protected $entityTable;	
-	
+
+	/**
+	 * первичный ключ
+	 * @var type 
+	 */
 	protected $key;
-
-
+		
 	/**
 	 * Использование join при выборке
 	 * @var type 
 	 */
 	protected $use_joins = false;
 	
+	/**
+	 * Использование мягкое удаление
+	 * @var type 
+	 */
 	protected $use_delete = false;
 
-	public function __construct( QueryBuilderInterface $adapter, $db_name = null) {// \CI_DB_mysqli_driver //DatabaseAdapterInterface
-        $this->db = $adapter;
-		
-		$this->entityTable = !empty($db_name)? "$db_name.".$this->setEntityTable() : $this->setEntityTable();
-		
-		//$this->key = $this->getKey();
+	/**
+	 * поле для мягкого удаления
+	 * @var type 
+	 */
+	protected $soft_delete_key;
 	
+
+	/**
+	 * поля сущности 
+	 * @var type 
+	 */
+	protected $mapping_fields = [];
+	
+	/**
+	 * псевдонимы полей сущности
+	 * @var type 
+	 */
+	protected $mapping_fields_aliases = [];
+	
+	/**
+	 * связи с другими мапперами
+	 * @var type 
+	 */
+	protected $relations = [];
+
+	/**
+	 * Контейнер
+	 * @var League\Container\Container
+	 */
+	protected $DI;
+			
+	function __construct(\League\Container\Container $DI, QueryBuilderInterface $adapter, $db_name = null) {
+		
+		$this->DI = $DI;
+		
+		$this->setMappingFields();
+		
+		$this->setAdapter($adapter);
+		
+		$this->setEntityTable($db_name);
+		
 		if($this->getEntityTable()=='' || $this->getPrimaryKey()==''){
 			throw new InvalidEntityPropertyException('Свойства entityTable или key не заданы');
-		}
+		}		
+		
+	}
+
+	abstract protected function setMappingFields();	
+	
+    public function getAdapter() {
+        return $this->adapter;
     }
+
+	public function setAdapter(QueryBuilderInterface $adapter){
+		 $this->adapter = $adapter;
+	}
+			
 	
-	
-	
-	function getEntityTable() {
+	protected function getEntityTable() {
 		return $this->entityTable;
 	}
 
-    public function getAdapter() {
-        return $this->db;
-    }
+	/**
+	 * Уставнока таблицы
+	 */
+	protected function setEntityTable($db_name) {
+		$this->entityTable = !empty($db_name)? "$db_name.".$this->table : $this->table;
+	}	
+
 
     public function findById($id)
     {
@@ -55,24 +118,27 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	
 	/**
 	 * Cохранение сущности
-	 * @param \Core\Infrastructure\EntityInterface $Entity
+	 * @param EntityInterface $Entity
 	 */
 	public function save(EntityInterface $Entity)
 	{
 		
 		$data = $this->unbuildEntity($Entity);
 		
+		//protected function onAfterSave(\SimpleORM\EntityInterface $Entity, &$data)
+		if(method_exists($this, 'onAfterSave' )) $this->onAfterSave( $Entity, $data );
+		
 		$id = $data[$this->getPrimaryKey()];
-		unset($data[$this->getPrimaryKey()]);
+		unset($data[$this->getPrimaryKey()]);		
 		
 		//insert
 		if (empty($id)) {
 			
 			unset($data[$this->setSoftDeleteKey()]);
 			
-			$this->db->insert($this->getEntityTable(),$data);
+			$this->getAdapter()->insert($this->getEntityTable(),$data);
 			
-			if (!$id = $this->db->insert_id()) {
+			if (!$id = $this->getAdapter()->insert_id()) {
 				return false;
 			}
 			
@@ -87,44 +153,53 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 
 		}		
 		
-		if(method_exists($this, 'onSaveSuccess' )){ return $this->onSaveSuccess( $Entity );}
+		if(method_exists($this, 'onBeforeSave' )) $this->onBeforeSave( $Entity );
+
 		
 		return true;
 	}
 	
 	/**
-	 * из объекта формирует массив
-	 * @param \Core\Infrastructure\EntityInterface $Entity
-	 * @return \Core\Infrastructure\EntityInterface
-	 * @throws BadMethodCallException
+	 * На успешное сохранение
+	 * @param \SimpleORM\EntityInterface $Entity
 	 */
-	protected function unbuildEntity(EntityInterface $Entity){
+	protected function onBeforeSave(EntityInterface $Entity){
 		
-		$mapfileds = array_merge([ 'id' => $this->key], $this->setMappingFields());
-
-		$row = [];
+		foreach ($this->relations as $alias => $mapper) {
 		
-        foreach ($mapfileds as $propery => $field ) {
+			$SaveEntity = $Entity->{'get'.$alias}();
 			
-			$method_get = 'get' . ucfirst($propery);
-			
-			if(!method_exists($Entity, $method_get )){
-				throw new BadMethodCallException("Метод {$method_get}  не определен");
-			}		
-			
-			if(method_exists($this, 'onUnBuild'.$propery )){
-				$value = $this->{'onUnBuild'.$propery}(  $Entity->{$method_get}() );
+			if(!$mapper->save($SaveEntity)){
+				throw new \Autoprice\Exceptions\EntityNotSaveException('Unable to save Entity!');
 			}
-			else{
-				$value = $Entity->{$method_get}();
-			}			
-			$row[$field] = $value;
-
-        }
-
-        return $row;		
-	}		
+			
+			unset($SaveEntity);
+		}
+		
+		return true;
+	}
 	
+	/**
+	 * На успешное удаление
+	 * @param \SimpleORM\EntityInterface $Entity
+	 */
+	protected function onBeforeDelete(EntityInterface $Entity) {
+		foreach ($this->relations as $alias => $cfg) {
+			$mapper = $cfg['mapper'];
+			//если связь один к одному то удаляем сущность
+			if($cgg['reltype'] == 'has_one'){
+				$Entity = $Entity->{'get'.$alias}();
+				if(!$mapper->delete($Entity)){
+					throw new \Autoprice\Exceptions\EntityNotDeleteException('Unable to delete Entity!');
+				}
+			}
+		}
+		
+		return true;
+	}
+
+
+
 	/**
 	 * Подготавливаем конечный вариант Сущности
 	 * 
@@ -135,21 +210,35 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	 */
 	protected function buildEntity(EntityInterface $Entity, array $row){
 		
-		$mapfields = array_merge([ 'id' => $this->key], $this->setMappingFields());
-
-        foreach ($mapfields as $propery => $field ) {
+        foreach ($this->mapping_fields as $alias => $cfg ) {
 			
 			$value = false;
 			
-			$method_set = 'set' . ucfirst($propery);
+			$field = $cfg['field'];
+			
+			$method_set = 'set' . ucfirst($alias);
 			
 			if(!method_exists($Entity, $method_set )){
 				throw new BadMethodCallException("Метод {$method_set}  не определен");
 			}			
 			
-			//событие onBuildField
-			if(method_exists($this, 'onBuild'.$propery )){
-				$value = $this->{'onBuild'.$propery}($field,$row);
+			//событие на формирование поля
+			if( isset($cfg['build']) && is_object($cfg['build']) ){
+				$value = call_user_func($cfg['build'], $row);
+			}
+			//на связь
+			elseif(isset($cfg['relation'])){
+				
+				$mapper = $this->DI->get($cfg['relation']);
+				
+				if($this->use_joins===true){
+					$value = $mapper->createEntity($row);
+				}
+				else{
+					$fkey = isset($cfg['on']) ? $cfg['on'] :$mapper->key;
+					$value = $mapper->findBySpecification((new Specification)->setWhere($fkey, $row[$field]));
+				}				
+				
 			}
 			elseif(is_string($field) && isset($row[strtolower($field)])){
 				$value = $row[strtolower($field)];
@@ -162,19 +251,108 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		
         return $Entity;		
 	}	
+
 	
+	/**
+	 * из объекта формирует массив
+	 * @param \Core\Infrastructure\EntityInterface $Entity
+	 * @return \Core\Infrastructure\EntityInterface
+	 * @throws BadMethodCallException
+	 */
+	protected function unbuildEntity(EntityInterface $Entity){
+		
+		$row = [];
+
+        foreach ($this->mapping_fields as $alias => $cfg ) {
+			
+			$field = $cfg['field'];
+			
+			$method_get = 'get' . ucfirst($alias);
+			
+			if(!method_exists($Entity, $method_get )){
+				throw new BadMethodCallException("Метод {$method_get}  не определен");
+			}		
+			
+			//--------------------------------------------------------------------
+			if( isset($cfg['unbuild']) && is_object($cfg['unbuild']) ){
+				$value = call_user_func($cfg['unbuild'], $Entity->{$method_get}() );
+			}
+			elseif(isset($cfg['relation'])){
+				
+				if(isset($cfg['on']))
+					$fkey = $this->DI->get($cfg['relation'])->getFieldAlias($cfg['on']);
+				else
+					$fkey = 'id';
+				
+				$value = $Entity->{$method_get}()->{'get'.$fkey}();
+				
+			}			
+			else{
+				$value = $Entity->{$method_get}();
+			}			
+						
+			$row[$field] = $value;
+
+        }
+
+        return $row;		
+	}	
 	
-	abstract protected function setEntityTable();
+	/**
+	 * Установка поля для маппинга
+	 */
+	protected function addMappingField($alias,$field = null){
+		
+		if(is_string($field)){
+			$field = ['field'	=>	$field];
+		}
+		elseif( (is_array($field) && !isset($field['field'])) || empty($field)){
+			$field['field']	= $alias;
+		}
 	
-	abstract protected function getPrimaryKey();
+		$this->mapping_fields[$alias] = $field;
+
+		if(isset($field['primary']) && $field['primary']===true){
+			$this->key = $field['field'];
+		}
+		
+		if(isset($field['softdelete']) && $field['softdelete']===true){
+			$this->soft_delete_key = $field['field'];
+		}
+		
+		$this->mapping_fields_aliases[$field['field']] = $alias;
+		
+		return $this;
+	}	
 	
-	abstract protected function setMappingFields();
+
 	
-	abstract protected function setSoftDeleteKey();
+	/**
+	 * Установка ключа
+	 */
+	protected function getPrimaryKey() {
+		return $this->key;
+	}	
+	
+	/**
+	 * Устанвка поля для мягкого удаляения
+	 */
+	protected function setSoftDeleteKey() {
+		return $this->soft_delete_key;
+	}
+
+
+	
+	public function getFieldAlias($field){
+		
+		return $this->mapping_fields_aliases[$field];
+		
+	}	
+	
 	
 	/**
 	 * 
-	 * @param \Core\Infrastructure\ISpecificationCriteria $specification
+	 * @param ISpecificationCriteria $specification
 	 * @return type
 	 */
 	public function findBySpecification(ISpecificationCriteria $specification){
@@ -197,7 +375,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	
 	/**
 	 * Удаление записи
-	 * @param \Core\Infrastructure\EntityInterface $Entity
+	 * @param EntityInterface $Entity
 	 * @return boolean
 	 */
 	public function delete(EntityInterface $Entity)
@@ -209,12 +387,12 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		if (
 				$delete_key > '' && 
 				$Entity->getId() > 0){
-				$result = $this->db->update($this->getEntityTable(), [ $delete_key => 1 ], "{$this->getPrimaryKey()} = '{$Entity->getId()}'");
+				$result = $this->getAdapter()->update($this->getEntityTable(), [ $delete_key => 1 ], "{$this->getPrimaryKey()} = '{$Entity->getId()}'");
 		}
 		elseif($Entity->getId() > 0){
 			
-			if($result = $this->db->delete($this->getEntityTable(), $this->getPrimaryKey()."  = ".$Entity->getId())){
-				if(method_exists($this, 'onDeleteSuccess' )){ $result = $this->onDeleteSuccess( $Entity );}
+			if($result = $this->getAdapter()->delete($this->getEntityTable(), $this->getPrimaryKey()."  = ".$Entity->getId())){
+				if(method_exists($this, 'onBeforeDelete' )){ $result = $this->onBeforeDelete( $Entity );}
 			}
 		}
 		
@@ -251,7 +429,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	
 	/**
 	 * Выборка удаленных моделей
-	 * @param \Core\Infrastructure\ISpecificationCriteria $specification
+	 * @param ISpecificationCriteria $specification
 	 */
 	private function setSoftDelete(ISpecificationCriteria $specification){
 		if(
@@ -264,18 +442,38 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	
 	/**
 	 * Построение join-ов
+	 * 
+	 * @todo добавить типы связей 
+	 * has_many - один к многим (пост и коммеентарии)
+	 * belongs_to - многие к многим (пользователь имет множество оплат одного заказа)
+	 * has_one - один к одному
 	 */
 	protected function setRelations(ISpecificationCriteria $Specification){
+
+		$joins = [];
+
+		foreach ($this->mapping_fields as $field => $cfg){
+			if(isset($cfg['relation'])){
+				
+				$this->relations[$field] = [
+					'mapper'	=>	$mapper = $this->DI->get($cfg['relation']),
+					'reltype'	=>  isset($cfg['reltype']) ? $cfg['reltype'] : 'belongs_to'
+				];
+
+				$table = $mapper->getEntityTable();
+
+				$relation_key = isset($cfg['on'])? $cfg['on'] : $mapper->key;
+				
+				$joins[$table] = [
+						'alias'	=> $field,
+						//'type'	=> 'INNER',
+						'on'	=> "`{$this->table}`.{$cfg['field']} = `{$field}`.{$relation_key}"
+				];
+
+			}
+		}	
+
 		if($this->use_joins===true){
-			$joins = [];
-			
-			foreach($this->setJoins() as $join){
-				$table = (new $join['mapper']($this->getAdapter()))->setEntityTable();
-				
-				$joins[$table] = $join;
-				
-			}	
-			
 			$Specification->setJoins($joins);
 		}			
 	}
