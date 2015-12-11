@@ -124,7 +124,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	{
 		
 		$data = $this->unbuildEntity($Entity);
-		
+	
 		//protected function onAfterSave(\SimpleORM\EntityInterface $Entity, &$data)
 		if(method_exists($this, 'onAfterSave' )) $this->onAfterSave( $Entity, $data );
 		
@@ -231,7 +231,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 				
 				$mapper = $this->DI->get($cfg['relation']);
 				
-				if($this->use_joins===true){
+				if($this->use_joins===true || empty($row[$field])){
 					$value = $mapper->createEntity($row);
 				}
 				else{
@@ -294,7 +294,9 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 			$row[$field] = $value;
 
         }
-
+		
+		ed($data);
+			
         return $row;		
 	}	
 	
