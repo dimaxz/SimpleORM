@@ -23,4 +23,8 @@ interface QueryBuilderInterface {
 	public function insert_id();
 	
 	public function delete($table,$where = []);
+	
+	public function startTransaction();
+	
+	public function endTransaction();
 }

@@ -401,5 +401,14 @@ class CodeigniterQueryBuilder implements \SimpleORM\QueryBuilderInterface
 
 		return $result;
 	}	
+	
+	public function endTransaction() {
+		$this->adapter->trans_start();
+	}
+
+	public function startTransaction() {
+		$this->adapter->trans_complete();
+	}
+
 		
 }

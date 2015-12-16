@@ -1,18 +1,19 @@
 {
-    "name": "dimaxz/simpleorm",
-    "description": "что то вроде ORM",
-    "authors": [
-	{
-	    "name": "Dmitriy Lanets",
-	    "email": "dimon_lanec@mail.ru"
+	"name": "dimaxz/simpleorm",
+	"description": "что то вроде ORM",
+	"authors": [
+		{
+			"name": "Dmitriy Lanets",
+			"email": "dimon_lanec@mail.ru"
+		}
+	],
+	"autoload": {
+		"psr-4": {
+			"SimpleORM\\": "src",
+			"Test\\": "example"
+		}
+	},
+	"require": {
+		"league/container": "2.0.*"
 	}
-    ],
-    "autoload": {
-	"psr-4": {
-	    "SimpleORM\\": "src"
-	}
-    },
-    "require": {
-	"league/container": "2.0.*"
-    }
 }

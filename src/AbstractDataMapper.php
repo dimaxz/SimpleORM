@@ -108,7 +108,11 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		$this->entityTable = !empty($db_name)? "$db_name.".$this->table : $this->table;
 	}	
 
-
+	/**
+	 * Получение записи по ключу
+	 * @param type $id
+	 * @return type
+	 */
     public function findById($id)
     {
 		$Criteria = (new Specification())->setWhere($this->key , $id);
@@ -117,20 +121,16 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
     }	
 	
 	/**
-	 * Cохранение сущности
-	 * @param EntityInterface $Entity
+	 * Сохранение сущности без спобытий
+	 * @param \SimpleORM\EntityInterface $Entity
 	 */
-	public function save(EntityInterface $Entity)
-	{
+	public function saveWithoutEvents(EntityInterface $Entity) {
 		
 		$data = $this->unbuildEntity($Entity);
-	
-		//protected function onAfterSave(\SimpleORM\EntityInterface $Entity, &$data)
-		if(method_exists($this, 'onAfterSave' )) $this->onAfterSave( $Entity, $data );
 		
 		$id = $data[$this->getPrimaryKey()];
 		unset($data[$this->getPrimaryKey()]);		
-		
+			
 		//insert
 		if (empty($id)) {
 			
@@ -151,33 +151,109 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 				return false;
 			}
 
-		}		
-		
-		if(method_exists($this, 'onBeforeSave' )) $this->onBeforeSave( $Entity );
-
+		}	
 		
 		return true;
 	}
 	
 	/**
-	 * На успешное сохранение
+	 * Cохранение сущности
+	 * @param EntityInterface $Entity
+	 */
+	public function save(EntityInterface $Entity)
+	{
+		if(method_exists($this, 'onAfterSave' )) $this->onAfterSave( $Entity );
+		
+		if(!$this->saveWithoutEvents($Entity)){
+			return false;
+		}
+		
+		if(method_exists($this, 'onBeforeSave' )) $this->onBeforeSave( $Entity );
+
+		return true;
+	}
+	
+	/**
+	 * Событие перед сохранением
+	 * @param \SimpleORM\EntityInterface $Entity
+	 */
+	public function onAfterSave(EntityInterface $Entity){
+		
+		$this->getAdapter()->startTransaction();
+		
+		$rel_list = $this->createListRelation();
+
+		foreach ($rel_list as $mapper => $obj_path){
+
+			$get_path = str_replace('#','->get','$o = $Entity'.$obj_path.';');
+			$set_path = str_replace(['#','();'],['->set','($o);'],'$Entity'.$obj_path.';');
+			eval($get_path);//получаем объект таким образом дабы не гулять по корневому объекту
+			if($this->DI->get($mapper)->saveWithoutEvents($o)){
+				eval($set_path);
+			}
+			unset($o);
+		}
+		
+	}
+	
+	/**
+	 * После успешного сохранения
 	 * @param \SimpleORM\EntityInterface $Entity
 	 */
 	protected function onBeforeSave(EntityInterface $Entity){
 		
-		foreach ($this->relations as $alias => $mapper) {
+		$this->getAdapter()->endTransaction();
 		
-			$SaveEntity = $Entity->{'get'.$alias}();
-			
-			if(!$mapper->save($SaveEntity)){
-				throw new \Autoprice\Exceptions\EntityNotSaveException('Unable to save Entity!');
-			}
-			
-			unset($SaveEntity);
-		}
+//		foreach ($this->relations as $alias => $mapper) {
+//		
+//			$SaveEntity = $Entity->{'get'.$alias}();
+//			
+//			if(!$mapper->save($SaveEntity)){
+//				throw new \Autoprice\Exceptions\EntityNotSaveException('Unable to save Entity!');
+//			}
+//			
+//			unset($SaveEntity);
+//		}
+//		
+//		return true;
+	}	
+
+	
+	/**
+	 * получение мапперов в порядке их использования с учетом вложенности
+	 * @return array
+	 */
+	protected function createListRelation(){
+		$rel_list = [];
 		
-		return true;
+		$rel_map = $this->getRelations();
+		
+		$this->createListRelationReq($rel_map,$rel_list);
+		
+		return $rel_list;
 	}
+	
+	/**
+	 * Выстроивает порядок использования мапперов в иерархии
+	 * @param array $rel_map
+	 * @param type $rel_list
+	 */
+	protected function createListRelationReq(array $rel_map,&$rel_list,$obj_parent_link = null) {
+		
+		foreach ($rel_map as $rel){
+			
+			$obj_link = $parent.'#'.$rel['alias'].'()';
+			
+			if(count($rel['relations'])>0){
+				$this->createListRelationReq($rel['relations'],$rel_list,$parent.'->get'.$rel['alias'].'()');
+				$rel_list [$rel['name']]= $obj_parent_link.$obj_link;
+			}
+			else{
+				$rel_list [$rel['name']] = $obj_parent_link.$obj_link;
+			}
+		}
+	}
+	
 	
 	/**
 	 * На успешное удаление
@@ -196,7 +272,31 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		}
 		
 		return true;
+	}	
+	
+	
+	
+	/**
+	 * получить связи
+	 */
+	protected function getRelations(){
+		$rel_map = [];
+		foreach ($this->mapping_fields as $field => $cfg){
+			if(isset($cfg['relation'])){		
+				$rels = $this->DI->get($cfg['relation'])->getRelations();
+				$rel_map []= [
+					'name'		=>	$cfg['relation'],
+					'alias'		=>	$field,
+					'relations'	=>	$rels
+				];
+			}
+		}
+		return $rel_map;
 	}
+
+	
+
+
 
 
 
@@ -294,8 +394,6 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 			$row[$field] = $value;
 
         }
-		
-		ed($data);
 			
         return $row;		
 	}	
@@ -495,5 +593,5 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		$o->use_delete = true;
 		return $o;
 	}
-
+	
 }

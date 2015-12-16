@@ -38,3 +38,19 @@ use SimpleORM\Specification;
 $SearchCriteria = (new Specification())->setWhere('tablename',$tablename);
 $Price = $this->PriceMapper->findBySpecification($SearchCriteria);
 ```
+save with relations
+```php
+$UserGroup = new UserGroup('admin','администратор');
+
+$User = new User('master','mail@test.ru', '65829e542dd151f443',$UserGroup);
+$User->setName('Тестовый пользюк 2');
+
+$City = new City('Москва');
+$Address = new UserAddress($City,'610110','Чернышевского');
+
+$User->setAddress($Address);
+
+if($UserMapper->save($User)){
+	echo 'save success';
+}
+```

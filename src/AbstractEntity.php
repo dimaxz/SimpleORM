@@ -26,7 +26,7 @@ abstract class AbstractEntity implements EntityInterface
                 "Идентификатор у сущности уже установлен");
         }
  
-        if ($id < 1) {
+        if (empty($id)) {//$id < 1
             throw new InvalidArgumentException("Неверный индентификатор");
         }
  
