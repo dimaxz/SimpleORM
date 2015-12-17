@@ -30,7 +30,7 @@ class CityMapper extends AbstractDataMapper
 	 * @return type
 	 */
 	public function createEntity(array $row) {
-		return $this->buildEntity(new City(), $row);
+		return $this->buildEntity(new City('moscow'), $row);
 	}	
 	
 	/**

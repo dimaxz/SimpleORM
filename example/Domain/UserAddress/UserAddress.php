@@ -7,6 +7,7 @@
 
 namespace Test\Domain\UserAddress;
 
+use Test\Domain\City\City;
 
 /**
  * Description of Producer
@@ -21,7 +22,7 @@ class UserAddress extends \SimpleORM\AbstractEntity {
 	
 	protected $city;
 
-	function __construct(\Test\Domain\City\City $City,$code,$street) {
+	function __construct(City $City,$code,$street) {
 		$this->setCity($City);
 		$this->setCode($code);
 		$this->setStreet($street);
@@ -47,7 +48,7 @@ class UserAddress extends \SimpleORM\AbstractEntity {
 		$this->street = $street;
 	}
 
-	function setCity(\Test\Domain\City\City $city) {
+	function setCity(City $city) {
 		$this->city = $city;
 	}
 

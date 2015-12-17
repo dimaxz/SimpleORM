@@ -30,7 +30,8 @@ class UserAddressMapper extends AbstractDataMapper
 	 * @return type
 	 */
 	public function createEntity(array $row) {
-		return $this->buildEntity(new UserAddress(), $row);
+		$City =  $this->DI->get('CityMapper')->createEntity([]);
+		return $this->buildEntity(new UserAddress( $City ,'201000','Lenina 63'), $row);
 	}	
 	
 	/**

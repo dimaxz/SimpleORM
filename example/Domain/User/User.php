@@ -64,7 +64,7 @@ class User extends \SimpleORM\AbstractEntity {
 		$this->password = $password;
 	}
 
-	function setGroup($group) {
+	function setGroup(UserGroup  $group) {
 		$this->group = $group;
 	}
 
