@@ -9,6 +9,10 @@ namespace SimpleORM;
  */
 abstract class AbstractDataMapper implements RepositoryInterface, MapperInterface
 {
+	
+	use TraitDataMapperEvent;
+	
+	
 	/**
 	 * адаптер для работы с бд
 	 * @var type 
@@ -128,6 +132,8 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		
 		$data = $this->unbuildEntity($Entity);
 		
+		if(method_exists($this, 'onPrepareData' )) $this->onPrepareData( $Entity , $data );
+		
 		$id = $data[$this->getPrimaryKey()];
 		unset($data[$this->getPrimaryKey()]);		
 			
@@ -173,51 +179,6 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		return true;
 	}
 	
-	/**
-	 * Событие перед сохранением
-	 * @param \SimpleORM\EntityInterface $Entity
-	 */
-	public function onAfterSave(EntityInterface $Entity){
-		
-		$this->getAdapter()->startTransaction();
-		
-		$rel_list = $this->createListRelation();
-
-		foreach ($rel_list as $mapper => $obj_path){
-
-			$get_path = str_replace('#','->get','$o = $Entity'.$obj_path.';');
-			$set_path = str_replace(['#','();'],['->set','($o);'],'$Entity'.$obj_path.';');
-			eval($get_path);//получаем объект таким образом дабы не гулять по корневому объекту
-			if($this->DI->get($mapper)->saveWithoutEvents($o)){
-				eval($set_path);
-			}
-			unset($o);
-		}
-		
-	}
-	
-	/**
-	 * После успешного сохранения
-	 * @param \SimpleORM\EntityInterface $Entity
-	 */
-	protected function onBeforeSave(EntityInterface $Entity){
-		
-		$this->getAdapter()->endTransaction();
-		
-//		foreach ($this->relations as $alias => $mapper) {
-//		
-//			$SaveEntity = $Entity->{'get'.$alias}();
-//			
-//			if(!$mapper->save($SaveEntity)){
-//				throw new \Autoprice\Exceptions\EntityNotSaveException('Unable to save Entity!');
-//			}
-//			
-//			unset($SaveEntity);
-//		}
-//		
-//		return true;
-	}	
-
 	
 	/**
 	 * получение мапперов в порядке их использования с учетом вложенности
@@ -242,39 +203,18 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		
 		foreach ($rel_map as $rel){
 			
-			$obj_link = $parent.'#'.$rel['alias'].'()';
+			$obj_link = '#'.$rel['alias'].'()';
 			
 			if(count($rel['relations'])>0){
-				$this->createListRelationReq($rel['relations'],$rel_list,$parent.'->get'.$rel['alias'].'()');
-				$rel_list [$rel['name']]= $obj_parent_link.$obj_link;
+				$this->createListRelationReq($rel['relations'],$rel_list,$obj_parent_link.'->get'.$rel['alias'].'()');
+				$rel_list [$obj_parent_link.$obj_link]= $rel['name'];
 			}
 			else{
-				$rel_list [$rel['name']] = $obj_parent_link.$obj_link;
+				$rel_list [$obj_parent_link.$obj_link] = $rel['name'];
 			}
 		}
 	}
-	
-	
-	/**
-	 * На успешное удаление
-	 * @param \SimpleORM\EntityInterface $Entity
-	 */
-	protected function onBeforeDelete(EntityInterface $Entity) {
-		foreach ($this->relations as $alias => $cfg) {
-			$mapper = $cfg['mapper'];
-			//если связь один к одному то удаляем сущность
-			if($cgg['reltype'] == 'has_one'){
-				$Entity = $Entity->{'get'.$alias}();
-				if(!$mapper->delete($Entity)){
-					throw new \Autoprice\Exceptions\EntityNotDeleteException('Unable to delete Entity!');
-				}
-			}
-		}
-		
-		return true;
-	}	
-	
-	
+
 	
 	/**
 	 * получить связи
