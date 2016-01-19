@@ -206,7 +206,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 			$obj_link = '#'.$rel['alias'].'()';
 			
 			if(count($rel['relations'])>0){
-				$this->createListRelationReq($rel['relations'],$rel_list,$obj_parent_link.'->get'.$rel['alias'].'()');
+				$this->createListRelationReq($rel['relations'],$rel_list,$obj_parent_link.'get'.$rel['alias'].'()');
 				$rel_list [$obj_parent_link.$obj_link]= $rel['name'];
 			}
 			else{
@@ -317,7 +317,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 			if( isset($cfg['unbuild']) && is_object($cfg['unbuild']) ){
 				$value = call_user_func($cfg['unbuild'], $Entity->{$method_get}() );
 			}
-			elseif(isset($cfg['relation'])){
+			elseif(isset($cfg['relation']) && is_object($Entity->{$method_get}()) ){
 				
 				if(isset($cfg['on']))
 					$fkey = $this->DI->get($cfg['relation'])->getFieldAlias($cfg['on']);
@@ -506,7 +506,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 				
 				$joins[$table] = [
 						'alias'	=> $field,
-						//'type'	=> 'INNER',
+						'type'	=> $cfg['reltype'] != 'has_many' ? 'INNER' : 'LEFT OUTER',
 						'on'	=> "`{$this->table}`.{$cfg['field']} = `{$field}`.{$relation_key}"
 				];
 

@@ -59,15 +59,35 @@ trait TraitDataMapperEvent {
 
 		foreach ($rel_list as $obj_path => $mapper) {
 
-			$get_path = str_replace('#', '->get', '$o = $Entity' . $obj_path . ';');
-			$set_path = str_replace(['#', '();'], ['->set', '($o);'], '$Entity' . $obj_path . ';');
+			$call_obj = '$Entity'.$obj_path.';';
+
+			$set_path = str_replace(['#', '();'], ['->set', '($o);'], $call_obj);
+		
+			$ar_path = explode('()',$obj_path);
 			
-			eval($get_path); //получаем объект таким образом дабы не гулять по корневому объекту
-			
-			if (is_object($o) && is_a($o,'SimpleORM\EntityInterface') && $this->DI->get($mapper)->saveWithoutEvents($o)) {
-				eval($set_path);
+			$o = $Entity;
+		
+			foreach ($ar_path as $_m){
+				
+				$_mc = str_replace('#','get',mb_ucfirst($_m));
+
+				//Set logic
+				if(empty($_m)){
+				
+					$_mc = ltrim( $ar_path[(count($ar_path)-2)] , '#');
+					
+					if (is_object($$_mc) && is_a($$_mc,'SimpleORM\EntityInterface') && $this->DI->get($mapper)->saveWithoutEvents($o)) {
+						$o = $$_mc;
+						eval($set_path);
+					}
+				}
+				elseif(is_object($o) ){
+					$$_mc = $o->{$_mc}();
+					$o = $$_mc;
+				}
+				
 			}
-			unset($o);
+			
 		}
 	}
 
