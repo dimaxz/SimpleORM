@@ -2,6 +2,8 @@
 
 namespace SimpleORM;
 
+use GUMP;
+
 /**
  * Description of Entity
  *
@@ -41,4 +43,20 @@ abstract class AbstractEntity implements EntityInterface
 	public function getDeleted() {
 		return $this->deleted;
 	}
+	
+	/**
+	 * Валидация поля
+	 * @param type $value
+	 * @param type $rule
+	 */
+	protected function validate($value,$rule){
+		
+		$is_valid = GUMP::is_valid([
+			'value'	=>	$value
+				], array(
+			'value' => $rule
+		));
+		
+		return $is_valid;
+	}	
 }

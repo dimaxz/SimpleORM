@@ -89,7 +89,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		}		
 		
 	}
-
+	
 	abstract protected function setMappingFields();	
 	
     public function getAdapter() {
