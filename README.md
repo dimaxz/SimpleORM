@@ -54,3 +54,38 @@ if($UserMapper->save($User)){
 	echo 'save success';
 }
 ```
+
+use ValueObject
+```php
+use 
+	SimpleORM\AbstractDataMapper, 
+	ValueObject\UserPhoto;
+
+class UserMapper extends AbstractDataMapper
+{
+	/**
+	 * Настройка полей
+	 */
+	protected function setMappingFields() {
+		
+		//вариант 1
+		$this
+				->addMappingField('id', [
+					'field'		 => 'usr_id',
+					'primary'	 => true
+					]
+				)
+				->addMappingField('photo',[
+					'name'		=>	'usr_photo',
+					'build'		=>	function($row){
+						return new UserPhoto($row['usr_photo']);
+					},
+					'unbuild'	=>	function(UserPhoto $UserPhoto){
+						return $UserPhoto->getPath();
+					}	
+				])
+			;
+
+	}	
+}
+```
