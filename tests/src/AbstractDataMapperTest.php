@@ -154,6 +154,36 @@ class AbstractDataMapperTest extends \PHPUnit_Framework_TestCase
 	}	
 	
 	/**
+	 * @covers SimpleORM\AbstractDataMapper::getPrimaryKey
+	 */
+	public function testGetPrimaryKey()
+	{
+		\TestHelper::setValueprotectedProperty($this->object,'key','tst_id');
+		$this->assertEquals(\TestHelper::callMethod($this->object,'GetPrimaryKey'), 'tst_id');	
+	}
+	
+	/**
+	 * @covers SimpleORM\AbstractDataMapper::setSoftDeleteKey
+	 */
+	public function testsetSoftDeleteKey()
+	{
+		\TestHelper::setValueprotectedProperty($this->object,'soft_delete_key','stc_deleted');
+		$this->assertEquals(\TestHelper::callMethod($this->object,'setSoftDeleteKey'), 'stc_deleted');	
+	}	
+	
+	/**
+	 *  @covers SimpleORM\AbstractDataMapper::getFieldAlias
+	 */
+	public function testGetFieldAlias(){
+		$mapping_fields_aliases = [
+			'name'	=>	'stc_fullname'
+		];
+		\TestHelper::setValueprotectedProperty($this->object,'mapping_fields_aliases',$mapping_fields_aliases);
+		$this->assertEquals(\TestHelper::callMethod($this->object,'getFieldAlias',['name']), 'stc_fullname');
+	}
+	
+	
+	/**
 	 * @covers SimpleORM\AbstractDataMapper::getAdapter
 	 * @todo   Implement testGetAdapter().
 	 */
@@ -201,17 +231,6 @@ class AbstractDataMapperTest extends \PHPUnit_Framework_TestCase
 		);
 	}
 
-	/**
-	 * @covers SimpleORM\AbstractDataMapper::getFieldAlias
-	 * @todo   Implement testGetFieldAlias().
-	 */
-	public function testGetFieldAlias()
-	{
-		// Remove the following lines when you implement this test.
-		$this->markTestIncomplete(
-				'This test has not been implemented yet.'
-		);
-	}
 
 	/**
 	 * @covers SimpleORM\AbstractDataMapper::findBySpecification

@@ -22,15 +22,15 @@ class TestHelper{
      * @param type $name
      * @param type $valued 
      */
-    private function setValueprotectedProperty($name, $value)
+    static public function setValueprotectedProperty($obj, $name, $value)
     {
-        $reflectionClass = new \ReflectionClass($this->object); //создаем reflectionClass
+        $reflectionClass = new \ReflectionClass($obj); //создаем reflectionClass
         $r = $reflectionClass->getProperty($name); //получаем свойство
         $r->setAccessible(true); //делаем открытым
-        $r->setValue($this->object, $value); //изменяем значение
+        $r->setValue($obj, $value); //изменяем значение
     }    
 	
-	static public function callMethod($obj, $name, array $args) {
+	static public function callMethod($obj, $name, array $args = []) {
         $class = new \ReflectionClass($obj);
         $method = $class->getMethod($name);
         $method->setAccessible(true);
