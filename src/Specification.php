@@ -79,7 +79,7 @@ class Specification implements ISpecificationCriteria
             $this->where[$field] = $value;
         }
         else{
-            $this->where = $where;
+            $this->where = $field;
         }
         
         return $this;
