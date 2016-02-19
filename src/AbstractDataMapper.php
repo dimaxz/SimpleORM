@@ -73,6 +73,12 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	 * @var League\Container\Container
 	 */
 	protected $DI;
+	
+	/**
+	 * Возврат данных в массиве
+	 * @var type 
+	 */
+	protected $result_array = false;
 			
 	function __construct(\League\Container\Container $DI, QueryBuilderInterface $adapter, $db_name = null) {
 		
@@ -370,7 +376,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	/**
 	 * Установка ключа
 	 */
-	protected function getPrimaryKey() {
+	public function getPrimaryKey() {
 		return $this->key;
 	}	
 	
@@ -382,12 +388,24 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	}
 
 
-	
+	/**
+	 * получение алиаса поля
+	 * @param type $field
+	 * @return type
+	 */
 	public function getFieldAlias($field){
-		
-		return $this->mapping_fields_aliases[$field];
-		
+		return $this->mapping_fields_aliases[$field];		
 	}	
+	
+	/**
+	 * получение поля по алиасу
+	 * @param type $alias
+	 * @return type
+	 */
+	public function getAliasField($alias)
+	{
+		return $this->mapping_fields[$alias]['field'];
+	}
 	
 	
 	/**
@@ -410,7 +428,13 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
         if (!$row = $res->row_array()) {
             return null;
         }
-        return $this->createEntity($row);				
+		
+		if($this->result_array===true){
+			return $row;
+		}
+		
+		return $this->createEntity($row);	
+		
 	}
 	
 	/**
@@ -454,6 +478,10 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		if (!$rows = $res->result_array()) {
             return null;
         }	
+		
+		if($this->result_array===true){
+			return $rows;
+		}		
 		
 		foreach($rows as $k =>  $row){
 			$rows[$k] = $this->createEntity($row);
@@ -533,5 +561,15 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		$o->use_delete = true;
 		return $o;
 	}
+	
+	/**
+	 * Данные только в массиве
+	 * @return \SimpleORM\AbstractDataMapper
+	 */
+	public function resultArray(){
+		$o = clone $this;
+		$o->result_array = true;
+		return $o;
+	}	
 	
 }
