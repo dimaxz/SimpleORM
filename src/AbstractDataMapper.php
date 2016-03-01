@@ -260,7 +260,13 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 			
 			$value = false;
 			
-			$field = $cfg['field'];
+			//автоопределени формата массива
+			if(isset($row[$this->key])){
+				$field = $cfg['field'];
+			}
+			else{
+				$field = $alias;
+			}
 			
 			$method_set = 'set' . ucfirst($alias);
 			
@@ -286,15 +292,15 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 				}				
 				
 			}
-			elseif(is_string($field) && isset($row[strtolower($field)])){
+			elseif(is_string($field) && isset($row[strtolower($field)])){				
 				$value = $row[strtolower($field)];
 			}
-			
+						
 			if($value!==false)
 				$Entity->{$method_set}($value);
 			
         }
-		
+				
         return $Entity;		
 	}	
 
