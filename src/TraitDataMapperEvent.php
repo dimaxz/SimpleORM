@@ -21,8 +21,7 @@ trait TraitDataMapperEvent {
 	 */
 	protected function onPrepareData(\SimpleORM\EntityInterface $Entity, &$data) {
 		foreach ($this->mapping_fields as $field => $cfg) {
-
-			if ($cfg['null'] === false && empty($data[$cfg['field']])) {
+			if (isset($cfg['null']) && $cfg['null'] === false && empty($data[$cfg['field']])) {
 				$data[$cfg['field']] = $cfg['default'];
 			}
 		}

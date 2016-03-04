@@ -135,7 +135,8 @@ class CodeigniterQueryBuilder implements \SimpleORM\QueryBuilderInterface
 				$Criteria->getManualJoins(), 
 				$Criteria->getGroup(), 
 				$Criteria->getManualWheres(), 
-				$Criteria->getWhereType()
+				$Criteria->getWhereType(),
+				$Criteria->getManualSelect()
 				);
 
 		return $res;		
@@ -157,9 +158,10 @@ class CodeigniterQueryBuilder implements \SimpleORM\QueryBuilderInterface
 	 * @param type $joins
 	 * @return type
 	 */
-	protected function createSelect($joins)
+	protected function createSelect(array $joins,$manualSelect)
 	{
-		$s = "`" . $this->TableName . '`.*';
+		$s = !empty($manualSelect) ? $manualSelect :"`" . $this->TableName . '`.*';
+		
 		foreach ($joins as $table => $join) {
 			$table = isset($join['alias']) ? "`{$join['alias']}`": $table;
 			$s .= ", $table.*";
@@ -182,10 +184,10 @@ class CodeigniterQueryBuilder implements \SimpleORM\QueryBuilderInterface
 	 * @return boolean
 	 * @throws \PDOException
 	 */
-	protected function buildQuery($where = array(), $limit = 25, $offset = 0, $joins = array(), $order = array(), $manualJoins = array(), $group = null, $manualWheres = array(), $whereType = 'AND')
+	protected function buildQuery($where = array(), $limit = 25, $offset = 0, $joins = array(), $order = array(), $manualJoins = array(), $group = null, $manualWheres = array(), $whereType = 'AND', $manualSelect = '')
 	{
 		$table = !empty($this->database)? "`{$this->database}`.".$this->TableName : $this->TableName;
-		$query = 'SELECT ' . $this->createSelect($joins) . " FROM `".$table."`";
+		$query = 'SELECT ' . $this->createSelect($joins, $manualSelect) . " FROM `".$table."`";
 		//$countQuery = "SELECT COUNT(*) AS cnt FROM `{$this->database}`.".$this->getTableName();
 
 		$wheres = array();

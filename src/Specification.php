@@ -10,134 +10,145 @@ namespace SimpleORM;
 class Specification implements ISpecificationCriteria
 {
 
-    protected $where = [];
+	protected $where = [];
 
-    protected $limit = 0;
+	protected $limit = 0;
 
-    protected $ofset = 0;
+	protected $ofset = 0;
 
-    protected $joins = [];
+	protected $joins = [];
 
-    protected $order = [];
+	protected $order = [];
 
-    protected $manualJoins = [];
+	protected $manualJoins = [];
 
-    protected $group = null;
+	protected $group = null;
 
-    protected $manualWheres = [];
+	protected $manualWheres = [];
 
-    protected $whereType = 'AND';
-    
-    function getWhere()
-    {
-        return $this->where;
-    }
+	protected $whereType = 'AND';
 
-    function getLimit()
-    {
-        return $this->limit;
-    }
+	protected $manualSelect;
 
-    function getOfset()
-    {
-        return $this->ofset;
-    }
+	function getManualSelect()
+	{
+		return $this->manualSelect;
+	}
 
-    function getJoins()
-    {
-        return $this->joins;
-    }
+	function setManualSelect($Select)
+	{
+		$this->manualSelect = $Select;
+	}
 
-    function getOrder()
-    {
-        return $this->order;
-    }
+	function getWhere()
+	{
+		return $this->where;
+	}
 
-    function getManualJoins()
-    {
-        return $this->manualJoins;
-    }
+	function getLimit()
+	{
+		return $this->limit;
+	}
 
-    function getGroup()
-    {
-        return $this->group;
-    }
+	function getOfset()
+	{
+		return $this->ofset;
+	}
 
-    function getManualWheres()
-    {
-        return $this->manualWheres;
-    }
+	function getJoins()
+	{
+		return $this->joins;
+	}
 
-    function getWhereType()
-    {
-        return $this->whereType;
-    }
+	function getOrder()
+	{
+		return $this->order;
+	}
 
-    function setWhere($field,$value = false)
-    {
-        if($value!==false){
-            $this->where[$field] = $value;
-        }
-        else{
-            $this->where = $where;
-        }
-        
-        return $this;
-    }
+	function getManualJoins()
+	{
+		return $this->manualJoins;
+	}
 
-    function setLimit($limit)
-    {
-        $this->limit = $limit;
-        return $this;
-    }
+	function getGroup()
+	{
+		return $this->group;
+	}
 
-    function setOfset($ofset)
-    {
-        $this->ofset = $ofset;
-        return $this;
-    }
+	function getManualWheres()
+	{
+		return $this->manualWheres;
+	}
 
-    function setJoins($joins)
-    {
-        $this->joins = $joins;
-        return $this;
-    }
+	function getWhereType()
+	{
+		return $this->whereType;
+	}
 
-    function setOrder($order)
-    {
-        $this->order = $order;
-        return $this;
-    }
+	function setWhere($field, $value = false)
+	{
+		if ($value !== false) {
+			$this->where[$field] = $value;
+		} else {
+			$this->where = $field;
+		}
 
-    function setManualJoins($manualJoins)
-    {
-        $this->manualJoins = $manualJoins;
-        return $this;
-    }
+		return $this;
+	}
 
-    function setGroup($group)
-    {
-        $this->group = $group;
-        return $this;
-    }
+	function setLimit($limit)
+	{
+		$this->limit = $limit;
+		return $this;
+	}
 
-    function setManualWheres($manualWheres)
-    {
-        $this->manualWheres = $manualWheres;
-        return $this;
-    }
+	function setOfset($ofset)
+	{
+		$this->ofset = $ofset;
+		return $this;
+	}
 
-    function setWhereType($whereType)
-    {
-        $this->whereType = $whereType;
-        return $this;
-    }
+	function setJoins($joins)
+	{
+		$this->joins = $joins;
+		return $this;
+	}
 
-    /**
-     * Создание критериев
-     */
-    public function getCriteria()
-    {
-        
-    }
+	function setOrder($order)
+	{
+		$this->order = $order;
+		return $this;
+	}
+
+	function setManualJoins($manualJoins)
+	{
+		$this->manualJoins = $manualJoins;
+		return $this;
+	}
+
+	function setGroup($group)
+	{
+		$this->group = $group;
+		return $this;
+	}
+
+	function setManualWheres($manualWheres)
+	{
+		$this->manualWheres = $manualWheres;
+		return $this;
+	}
+
+	function setWhereType($whereType)
+	{
+		$this->whereType = $whereType;
+		return $this;
+	}
+
+	/**
+	 * Создание критериев
+	 */
+	public function getCriteria()
+	{
+		
+	}
 }
