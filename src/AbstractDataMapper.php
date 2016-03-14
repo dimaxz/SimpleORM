@@ -255,18 +255,13 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	 * @throws BadMethodCallException
 	 */
 	protected function buildEntity(EntityInterface $Entity, array $row){
-		
+	//ed($row);
         foreach ($this->mapping_fields as $alias => $cfg ) {
 			
 			$value = false;
 			
 			//автоопределени формата массива
-			if(isset($row[$this->key])){
-				$field = $cfg['field'];
-			}
-			else{
-				$field = $alias;
-			}
+			$field = $cfg['field'];
 			
 			$method_set = 'set' . ucfirst($alias);
 			
@@ -276,6 +271,13 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 			
 			//событие на формирование поля
 			if( isset($cfg['build']) && is_object($cfg['build']) ){
+				
+//				ed([
+//					get_class($Entity),
+//					$row
+//				]);
+		
+				
 				$value = call_user_func($cfg['build'], $row);
 			}
 			//на связь
@@ -284,7 +286,15 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 				$mapper = $this->DI->get($cfg['relation']);
 				
 				if($this->use_joins===true || empty($row[$field])){
+					
 					$value = $mapper->createEntity($row);
+					
+//					ed([
+//					get_class($mapper),
+//						$row,
+//						$value
+//					]);
+
 				}
 				else{
 					$fkey = isset($cfg['on']) ? $cfg['on'] :$mapper->key;
@@ -317,6 +327,13 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 
         foreach ($this->mapping_fields as $alias => $cfg ) {
 			
+			//автоопределени формата массива
+//			if(isset($row[$this->key])){
+//				$field = $cfg['field'];
+//			}
+//			else{
+//				$field = $alias;
+//			}			
 			$field = $cfg['field'];
 			
 			$method_get = 'get' . ucfirst($alias);
@@ -529,9 +546,11 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 		foreach ($this->mapping_fields as $field => $cfg){
 			if(isset($cfg['relation'])){
 				
+				$reltype = isset($cfg['reltype']) ? $cfg['reltype'] : 'belongs_to';
+				
 				$this->relations[$field] = [
 					'mapper'	=>	$mapper = $this->DI->get($cfg['relation']),
-					'reltype'	=>  isset($cfg['reltype']) ? $cfg['reltype'] : 'belongs_to'
+					'reltype'	=>  $reltype
 				];
 
 				$table = $mapper->getEntityTable();
@@ -540,7 +559,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 				
 				$joins[$table] = [
 						'alias'	=> $field,
-						'type'	=> $cfg['reltype'] != 'has_many' ? 'INNER' : 'LEFT OUTER',
+						'type'	=> $reltype != 'has_many' ? 'INNER' : 'LEFT OUTER',
 						'on'	=> "`{$this->table}`.{$cfg['field']} = `{$field}`.{$relation_key}"
 				];
 

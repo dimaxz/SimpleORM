@@ -35,7 +35,7 @@ trait TraitDataMapperEvent {
 		foreach ($this->relations as $alias => $cfg) {
 			$mapper = $cfg['mapper'];
 			//если связь один к одному то удаляем сущность
-			if ($cgg['reltype'] == 'has_one') {
+			if ($cfg['reltype'] == 'has_one') {
 				$Entity = $Entity->{'get' . $alias}();
 				if (!$mapper->delete($Entity)) {
 					throw new \Autoprice\Exceptions\EntityNotDeleteException('Unable to delete Entity!');
@@ -68,14 +68,14 @@ trait TraitDataMapperEvent {
 		
 			foreach ($ar_path as $_m){
 				
-				$_mc = str_replace('#','get',mb_ucfirst($_m));
+				$_mc = str_replace('#','get',ucfirst($_m));
 
 				//Set logic
 				if(empty($_m)){
-				
+			
 					$_mc = ltrim( $ar_path[(count($ar_path)-2)] , '#');
 					
-					if (is_object($$_mc) && is_a($$_mc,'SimpleORM\EntityInterface') && $this->DI->get($mapper)->saveWithoutEvents($o)) {
+					if (isset($$_mc) && is_object($$_mc) && is_a($$_mc,'SimpleORM\EntityInterface') && $this->DI->get($mapper)->saveWithoutEvents($o)) {
 						$o = $$_mc;
 						eval($set_path);
 					}

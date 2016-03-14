@@ -16,7 +16,7 @@ interface MapperInterface {
 	
 	public function getAdapter();
 	
-	public function createEntity(array $row);
+	public function createEntity(array $row = []);
 	
 	
 }
