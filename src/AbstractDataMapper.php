@@ -522,7 +522,7 @@ abstract class AbstractDataMapper implements RepositoryInterface, MapperInterfac
 	 * Выборка удаленных моделей
 	 * @param ISpecificationCriteria $specification
 	 */
-	private function setSoftDelete(ISpecificationCriteria $specification){
+	protected function setSoftDelete(ISpecificationCriteria $specification){
 		if(
 				$this->use_delete === false &&
 				$this->setSoftDeleteKey()>'' 

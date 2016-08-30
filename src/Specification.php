@@ -30,6 +30,11 @@ class Specification implements ISpecificationCriteria
 
 	protected $manualSelect;
 
+	
+	static public function create(){
+		return new SELF;
+	}
+	
 	function getManualSelect()
 	{
 		return $this->manualSelect;
@@ -38,6 +43,7 @@ class Specification implements ISpecificationCriteria
 	function setManualSelect($Select)
 	{
 		$this->manualSelect = $Select;
+		return $this;
 	}
 
 	function getWhere()
